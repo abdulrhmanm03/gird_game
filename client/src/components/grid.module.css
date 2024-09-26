@@ -1,0 +1,22 @@
+div.grid {
+  background: black;
+  color: whitesmoke;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  width: 60%;
+  margin: auto;
+  margin-top: 150px;
+  border: darkred 3px solid;
+  border-radius: 10px;
+}
+
+div.squer {
+  padding: 20px;
+  border: darkred solid 1px;
+  height: 80px;
+}
+
+div.activesquer {
+  background-color: darkred;
+}
