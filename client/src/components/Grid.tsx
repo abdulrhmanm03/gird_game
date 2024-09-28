@@ -1,46 +1,47 @@
 import { useEffect, useState } from "react";
-import Squer from "./Squer";
 import styles from "./grid.module.css";
+import Mode1Squer from "./Mode1Squer";
+import Mode2Squer from "./Mode2Squer";
 
-export default function Grid() {
+interface Props {
+  socket: WebSocket;
+  mode: number;
+  contains: number;
+}
+
+export default function Grid({ socket, mode, contains }: Props) {
   const width = 5;
   const height = 5;
 
-  const initGrid = new Array(width * height).fill(false);
+  const initGrid = new Array(width * height).fill(0);
   const [grid, setGrid] = useState(initGrid);
 
-  const [ws, setWs] = useState<WebSocket | null>(null);
-
   useEffect(() => {
-    const socket = new WebSocket("ws://localhost:8080/ws");
-    setWs(socket);
-
-    socket.onmessage = (event) => {
-      const newGrid = JSON.parse(event.data);
-      setGrid(newGrid);
-    };
-
-    return () => {
-      socket.close();
-    };
-  }, []);
-
-  const handleClick = (i: number) => {
-    if (ws) {
-      const newGrid = [...grid];
-      newGrid[i] = !newGrid[i];
-      console.log(i);
-      setGrid(newGrid);
-      ws.send(JSON.stringify(newGrid));
+    if (mode == 2) {
+      socket.onmessage = (event) => {
+        const { board } = JSON.parse(event.data);
+        console.log(board);
+        setGrid(board);
+      };
     }
-  };
-
+  }, [mode, socket]);
   return (
     <div className={styles.grid}>
-      {grid.map((value, i) => {
-        return (
-          <Squer isActive={value} key={i} onClick={() => handleClick(i)} />
-        );
+      {grid.map((_, i) => {
+        if (mode == 1) {
+          return <Mode1Squer key={i} socket={socket} pos={i} />;
+        }
+        if (mode == 2) {
+          return (
+            <Mode2Squer
+              key={i}
+              socket={socket}
+              pos={i}
+              contains={contains}
+              grid={grid}
+            />
+          );
+        }
       })}
     </div>
   );
