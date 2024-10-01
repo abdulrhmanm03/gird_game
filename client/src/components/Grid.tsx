@@ -20,7 +20,6 @@ export default function Grid({ socket, mode, contains }: Props) {
     if (mode == 2) {
       socket.onmessage = (event) => {
         const { board } = JSON.parse(event.data);
-        console.log(board);
         setGrid(board);
       };
     }
