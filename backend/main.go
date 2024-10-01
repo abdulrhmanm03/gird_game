@@ -66,15 +66,25 @@ func websocketHandler(c *gin.Context) {
 		return
 	}
 
-	msgToSend := MessageToSend{Room_state: 1, Board: room.Board}
+	msgToSend := MessageToSend{Room_state: room.Status, Board: room.Board}
 	MsgJson, err := json.Marshal(msgToSend)
 	if err != nil {
 		log.Println("cant convert to json")
 		return
 	}
-	err = conn.WriteMessage(mt, MsgJson)
-	if err != nil {
-		log.Println("write:", err)
+	if room.Player1 != nil {
+
+		err = room.Player1.Conn.WriteMessage(mt, MsgJson)
+		if err != nil {
+			log.Println("write:", err)
+		}
+	}
+	if room.Player2 != nil {
+
+		err = room.Player2.Conn.WriteMessage(mt, MsgJson)
+		if err != nil {
+			log.Println("write:", err)
+		}
 	}
 	for {
 		_, message, err := conn.ReadMessage()
