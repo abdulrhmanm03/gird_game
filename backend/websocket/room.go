@@ -13,9 +13,10 @@ type Room struct {
 	Board   [25]int
 }
 
+// set the limit for 1000 for now
 var (
-	roomForMode1 *Room
-	roomForMode2 *Room
+	roomForMode1 []*Room
+	roomForMode2 []*Room
 )
 
 func createRoom(player *game.Player, id int) (*Room, error) {
@@ -27,13 +28,13 @@ func createRoom(player *game.Player, id int) (*Room, error) {
 	if player.Role == 1 {
 		room.Player1 = player
 		room.Player2 = nil
-		roomForMode2 = room
+		roomForMode2 = append(roomForMode2, room)
 
 		return room, nil
 	} else if player.Role == 2 {
 		room.Player1 = nil
 		room.Player2 = player
-		roomForMode1 = room
+		roomForMode1 = append(roomForMode1, room)
 
 		return room, nil
 	}
@@ -58,28 +59,26 @@ func addPlayerToRoom(player *game.Player, room *Room) (*Room, error) {
 }
 
 func FindOrCreateRoom(player *game.Player, roomId int) (*Room, error) {
-	if player.Role == 1 && roomForMode1 != nil && roomForMode1.Status == 1 {
-		room, err := addPlayerToRoom(player, roomForMode1)
-		if err != nil {
-			return nil, err
-		}
-		return room, nil
+	var roomSlice []*Room
+	if player.Role == 1 {
+		roomSlice = roomForMode1
+	} else {
+		roomSlice = roomForMode2
 	}
-	if player.Role == 2 && roomForMode2 != nil && roomForMode2.Status == 1 {
-		room, err := addPlayerToRoom(player, roomForMode2)
-		if err != nil {
-			return nil, err
+
+	for _, room := range roomSlice {
+		if room.Status == 1 {
+			room, err := addPlayerToRoom(player, room)
+			if err != nil {
+				return nil, err
+			}
+			return room, nil
 		}
-		return room, nil
 	}
+
 	room, err := createRoom(player, roomId)
 	if err != nil {
 		return nil, err
-	}
-	if player.Role == 1 {
-		roomForMode2 = room
-	} else {
-		roomForMode2 = room
 	}
 
 	return room, nil

@@ -134,7 +134,7 @@ func getRoomId(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"room_id": 9999})
+	c.JSON(http.StatusOK, gin.H{"room_id": 9999}) // room id hard coded for now
 }
 
 func main() {
