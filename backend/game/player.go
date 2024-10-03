@@ -15,7 +15,7 @@ func CreatePlayer(role int, conn *websocket.Conn) Player {
 	return Player{
 		Name:  "yawdat",
 		Role:  role,
-		Score: 999,
+		Score: 100,
 		Conn:  conn,
 	}
 }
