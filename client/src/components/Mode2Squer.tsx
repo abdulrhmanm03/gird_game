@@ -9,26 +9,43 @@ interface Props {
 }
 
 export default function Mode2Squer({ socket, pos, contains, grid }: Props) {
-  const [isActive, setIsActive] = useState(false);
+  const [isBomb, setIsBomb] = useState(false);
+  const [isApple, setIsApple] = useState(false);
   useEffect(() => {
-    if (grid[pos] == 0) {
-      setIsActive(false);
-    }
-    if (grid[pos] == 1) {
-      setIsActive(true);
+    switch (grid[pos]) {
+      case 1:
+        setIsApple(false);
+        setIsBomb(true);
+        break;
+      case 2:
+        setIsBomb(false);
+        setIsApple(true);
+        break;
+      default:
+        setIsBomb(false);
+        setIsApple(false);
+        break;
     }
   }, [grid, pos]);
+
   function handleClick(pos: number) {
-    if (contains == 1) {
-      setIsActive(true);
+    switch (contains) {
+      case 1:
+        setIsApple(false);
+        setIsBomb(true);
+        break;
+      case 2:
+        setIsBomb(false);
+        setIsApple(true);
+        break;
     }
     socket.send(JSON.stringify({ pos, contains }));
-    console.log("mode 2 is talking from " + pos);
   }
+
   return (
-    <div
-      className={`${styles.squer} ${isActive ? styles.activesquer : ""} `}
-      onClick={() => handleClick(pos)}
-    ></div>
+    <div className={styles.squer} onClick={() => handleClick(pos)}>
+      {isBomb && <img className={styles.svg} src="/public/bomb.svg"></img>}
+      {isApple && <img className={styles.svg} src="/public/apple.svg"></img>}
+    </div>
   );
 }

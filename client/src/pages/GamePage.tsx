@@ -74,7 +74,20 @@ export default function GamePage() {
       {isRoomActive ? (
         <>
           {mode === 2 && (
-            <button onClick={() => changeSquereContains(1)}>red</button>
+            <div className={styles.buttonscontainer}>
+              <button
+                className={styles.mode2buttons}
+                onClick={() => changeSquereContains(1)}
+              >
+                bomb
+              </button>
+              <button
+                className={styles.mode2buttons}
+                onClick={() => changeSquereContains(2)}
+              >
+                apple
+              </button>
+            </div>
           )}
 
           {ws != null && (

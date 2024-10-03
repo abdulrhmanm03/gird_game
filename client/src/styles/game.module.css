@@ -1,24 +1,51 @@
 .grid {
   background: black;
-  color: whitesmoke;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   grid-template-rows: repeat(5, 1fr);
   width: 60%;
   margin: auto;
   margin-top: 150px;
-  border: darkred 3px solid;
+  border: 3px solid white;
   border-radius: 10px;
 }
 
 .squer {
+  display: flex;
+  align-items: center;
   padding: 20px;
-  border: darkred solid 1px;
+  border: 1px solid white;
   height: 80px;
 }
 
-.activesquer {
-  background-color: darkred;
+.buttonscontainer {
+  display: flex;
+  justify-content: center;
+  gap: 3%;
+  margin-top: 100px;
+}
+
+.mode2buttons {
+  color: white;
+  background-color: black;
+  border: 1px solid white;
+  border-radius: 10px;
+  padding: 10px 20px;
+  width: 20%;
+  max-width: 120px;
+}
+
+.mode2buttons:hover {
+  color: darkred;
+  border: 1px solid darkred;
+  cursor: pointer;
+}
+
+.svg {
+  z-index: 1000;
+  margin: auto;
+  max-height: 100%;
+  max-width: 100%;
 }
 
 .waitingcontainer {
