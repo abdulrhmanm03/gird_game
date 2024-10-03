@@ -14,10 +14,8 @@ type Room struct {
 }
 
 var (
-	roomForMode1     = make(map[int]*Room)
-	roomForMode1List = []int{}
-	roomForMode2     = make(map[int]*Room)
-	roomForMode2List = []int{}
+	roomForMode1 = make(map[int]*Room)
+	roomForMode2 = make(map[int]*Room)
 )
 
 func createRoom(player *game.Player, id int) (*Room, error) {
@@ -30,14 +28,12 @@ func createRoom(player *game.Player, id int) (*Room, error) {
 		room.Player1 = player
 		room.Player2 = nil
 		roomForMode2[room.Id] = room
-		roomForMode2List = append(roomForMode2List, room.Id)
 
 		return room, nil
 	} else if player.Role == 2 {
 		room.Player1 = nil
 		room.Player2 = player
 		roomForMode1[room.Id] = room
-		roomForMode1List = append(roomForMode1List, room.Id)
 
 		return room, nil
 	}
@@ -78,21 +74,18 @@ func addPlayerToRoom(player *game.Player, room *Room) (*Room, error) {
 }
 
 func findOrCreateRoom(player *game.Player, roomId int) (*Room, error) {
-	var roomList []int
 	var rooms map[int]*Room
 	if player.Role == 1 {
-		roomList = roomForMode1List
 		rooms = roomForMode1
 	} else {
-		roomList = roomForMode2List
 		rooms = roomForMode2
 	}
 
-	for _, id := range roomList {
-		if rooms[id].Status == 1 {
-			room, err := addPlayerToRoom(player, rooms[id])
+	for _, room := range rooms {
+		if room.Status == 1 {
+			room, err := addPlayerToRoom(player, room)
 			if err != nil {
-				return nil, err
+				continue
 			}
 			return room, nil
 		}
