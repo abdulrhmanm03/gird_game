@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import Waiting from "../components/Waiting";
 import Grid from "../components/Grid";
 import { useLocation, useNavigate } from "react-router-dom";
+import styles from "../styles/game.module.css";
 
 export default function GamePage() {
   const navigate = useNavigate();
@@ -82,7 +82,9 @@ export default function GamePage() {
           )}
         </>
       ) : (
-        <Waiting />
+        <div className={styles.waitingcontainer}>
+          <h1>waiting for another player to join the room...</h1>
+        </div>
       )}
     </>
   );

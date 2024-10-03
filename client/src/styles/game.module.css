@@ -1,4 +1,4 @@
-div.grid {
+.grid {
   background: black;
   color: whitesmoke;
   display: grid;
@@ -11,12 +11,18 @@ div.grid {
   border-radius: 10px;
 }
 
-div.squer {
+.squer {
   padding: 20px;
   border: darkred solid 1px;
   height: 80px;
 }
 
-div.activesquer {
+.activesquer {
   background-color: darkred;
+}
+
+.waitingcontainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 400px;
 }

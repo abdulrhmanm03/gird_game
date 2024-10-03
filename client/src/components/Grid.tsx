@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import styles from "./grid.module.css";
+import styles from "../styles/game.module.css";
 import Mode1Squer from "./Mode1Squer";
 import Mode2Squer from "./Mode2Squer";
 

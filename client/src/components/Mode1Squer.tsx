@@ -1,4 +1,4 @@
-import styles from "./grid.module.css";
+import styles from "../styles/game.module.css";
 
 interface Props {
   socket: WebSocket;
