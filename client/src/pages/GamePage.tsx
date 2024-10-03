@@ -9,61 +9,30 @@ export default function GamePage() {
   const mode = location.state;
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [isRoomActive, setIsRoomActive] = useState(false);
-  const [roomId, setRoomId] = useState(-1);
   const [squerContains, setSquerContains] = useState(0);
 
   useEffect(() => {
-    async function getRoomId() {
-      try {
-        const response = await fetch("http://localhost:3000/getRoomId", {
-          method: "POST",
-          body: JSON.stringify({ mode }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setRoomId(data.room_id);
-        } else {
-          alert("something went wrong");
-          console.log(response);
-          navigate("/");
-        }
-      } catch {
-        alert("faild to connect to server");
-        navigate("/");
-      }
+    const socket = new WebSocket("ws://localhost:3000/ws");
+    if (socket === null) {
+      alert("faild to connect to the socket");
+      navigate("/");
     }
+    setWs(socket);
 
-    getRoomId();
+    socket.onopen = () => {
+      socket.send(JSON.stringify({ mode }));
+    };
+    socket.onmessage = (event) => {
+      const { room_state } = JSON.parse(event.data);
+      if (room_state === 0) {
+        setIsRoomActive(true);
+      }
+    };
+
+    return () => {
+      socket.close();
+    };
   }, [mode, navigate]);
-
-  useEffect(() => {
-    if (roomId > -1) {
-      const socket = new WebSocket("ws://localhost:3000/ws");
-      setWs(socket);
-
-      if (socket === null) {
-        alert("faild to connect to the socket");
-        navigate("/");
-      }
-
-      socket.onopen = () => {
-        socket.send(JSON.stringify({ room_id: roomId, mode }));
-      };
-      socket.onmessage = (event) => {
-        const { room_state } = JSON.parse(event.data);
-        if (room_state === 0) {
-          setIsRoomActive(true);
-        }
-      };
-
-      return () => {
-        socket.close();
-      };
-    }
-  }, [mode, roomId, navigate]);
 
   function changeSquereContains(contains: number) {
     setSquerContains(contains);
