@@ -44,8 +44,8 @@ export default function Mode2Squer({ socket, pos, contains, grid }: Props) {
 
   return (
     <div className={styles.squer} onClick={() => handleClick(pos)}>
-      {isBomb && <img className={styles.svg} src="/public/bomb.svg"></img>}
-      {isApple && <img className={styles.svg} src="/public/apple.svg"></img>}
+      {isBomb && <img className={styles.svg} src="/bomb.svg"></img>}
+      {isApple && <img className={styles.svg} src="/apple.svg"></img>}
     </div>
   );
 }

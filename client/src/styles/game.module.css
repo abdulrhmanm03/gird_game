@@ -1,3 +1,10 @@
+.gamepage {
+  display: flex;
+  align-content: center;
+  margin-inline: auto;
+  flex-direction: column;
+  max-width: 1000px;
+}
 .grid {
   background: black;
   display: grid;
@@ -5,7 +12,7 @@
   grid-template-rows: repeat(5, 1fr);
   width: 60%;
   margin: auto;
-  margin-top: 150px;
+  margin-top: 100px;
   border: 3px solid white;
   border-radius: 10px;
 }
@@ -22,7 +29,7 @@
   display: flex;
   justify-content: center;
   gap: 3%;
-  margin-top: 100px;
+  margin-top: 50px;
 }
 
 .mode2buttons {

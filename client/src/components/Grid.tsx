@@ -18,10 +18,10 @@ export default function Grid({ socket, mode, contains }: Props) {
 
   useEffect(() => {
     if (mode == 2) {
-      socket.onmessage = (event) => {
+      socket.addEventListener("message", (event) => {
         const { board } = JSON.parse(event.data);
         setGrid(board);
-      };
+      });
     }
   }, [mode, socket]);
   return (
