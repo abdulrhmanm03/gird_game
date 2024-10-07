@@ -27,8 +27,6 @@ export default function GamePage() {
       const { room_state } = JSON.parse(event.data);
       if (room_state === 0) {
         setIsRoomActive(true);
-      } else {
-        setIsRoomActive(false);
       }
     });
 

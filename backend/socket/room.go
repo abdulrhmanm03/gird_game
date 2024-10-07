@@ -10,30 +10,35 @@ type Room struct {
 	Player1 *game.Player
 	Player2 *game.Player
 	Status  int
-	Board   [25]int
+	Board   []*game.Squere
 }
 
 var (
-	roomForMode1 = make(map[int]*Room)
-	roomForMode2 = make(map[int]*Room)
+	roomsForMode1 = make(map[int]*Room)
+	roomsForMode2 = make(map[int]*Room)
+)
+
+var (
+	width  = 5
+	height = 5
 )
 
 func createRoom(player *game.Player, id int) (*Room, error) {
 	room := &Room{
 		Id:     id,
 		Status: 1,
-		Board:  [25]int{},
+		Board:  game.CreateBoard(width, height),
 	}
 	if player.Role == 1 {
 		room.Player1 = player
 		room.Player2 = nil
-		roomForMode2[room.Id] = room
+		roomsForMode2[room.Id] = room
 
 		return room, nil
 	} else if player.Role == 2 {
 		room.Player1 = nil
 		room.Player2 = player
-		roomForMode1[room.Id] = room
+		roomsForMode1[room.Id] = room
 
 		return room, nil
 	}
@@ -52,7 +57,7 @@ func addPlayerToRoom(player *game.Player, room *Room) (*Room, error) {
 		// test the other player connection if not connected delete the room
 		err := room.Player2.Conn.WriteJSON(testConn{Test: "test"})
 		if err != nil {
-			delete(roomForMode2, room.Id)
+			delete(roomsForMode2, room.Id)
 			return nil, err
 		}
 		room.Player1 = player
@@ -63,7 +68,7 @@ func addPlayerToRoom(player *game.Player, room *Room) (*Room, error) {
 		// test the other player connection if not connected delete the room
 		err := room.Player1.Conn.WriteJSON(testConn{Test: "test"})
 		if err != nil {
-			delete(roomForMode1, room.Id)
+			delete(roomsForMode1, room.Id)
 			return nil, err
 		}
 		room.Player2 = player
@@ -76,9 +81,9 @@ func addPlayerToRoom(player *game.Player, room *Room) (*Room, error) {
 func findOrCreateRoom(player *game.Player, roomId int) (*Room, error) {
 	var rooms map[int]*Room
 	if player.Role == 1 {
-		rooms = roomForMode1
+		rooms = roomsForMode1
 	} else {
-		rooms = roomForMode2
+		rooms = roomsForMode2
 	}
 
 	for _, room := range rooms {

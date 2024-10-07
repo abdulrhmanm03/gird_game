@@ -28,6 +28,7 @@ func handleInitMsg(conn *websocket.Conn) (*game.Player, *Room, error) {
 	}
 
 	player := game.CreatePlayer(initMsg.Mode, conn)
+	// NOTE: the room id is hard coded for now
 	room, err := findOrCreateRoom(&player, 999)
 	if err != nil {
 		log.Println("failed to creat a room")
@@ -38,8 +39,7 @@ func handleInitMsg(conn *websocket.Conn) (*game.Player, *Room, error) {
 }
 
 type InitMessageToSend struct {
-	RoomState int     `json:"room_state"`
-	Board     [25]int `json:"board"`
+	RoomState int `json:"room_state"`
 }
 
 func sendInitMsg(room *Room) error {
@@ -73,11 +73,12 @@ type Player1ToPlayer1Msg struct {
 }
 
 type Player1ToPlayer2Msg struct {
-	RoomState    int     `json:"room_state"`
-	Board        [25]int `json:"board"`
-	Player2Score int     `json:"score"`
+	RoomState    int `json:"room_state"`
+	Pos          int `json:"pos"`
+	Player2Score int `json:"score"`
 }
 
+// TODO: refactor this
 func handleMsgFromPlayer1(room *Room, conn *websocket.Conn) error {
 
 	// handle the message sent from player 1
@@ -90,17 +91,22 @@ func handleMsgFromPlayer1(room *Room, conn *websocket.Conn) error {
 	log.Println("player1: ", msgFromPlayer1.Pos) // logging
 
 	// game logic
-	if room.Board[msgFromPlayer1.Pos] == 1 {
+	squere := room.Board[msgFromPlayer1.Pos]
+	squereContent := squere.Content
+
+	if squereContent == 1 {
 		room.Player1.Score -= 5
-	} else if room.Board[msgFromPlayer1.Pos] == 2 {
+		squere.Clicked <- true
+	} else if squereContent == 2 {
 		room.Player1.Score += 5
+		squere.Clicked <- true
 	}
 
 	// send message to player 1
 	player1ToPlayer1Msg := Player1ToPlayer1Msg{
 		RoomState:     room.Status,
 		SquereIdx:     msgFromPlayer1.Pos,
-		SquereContent: room.Board[msgFromPlayer1.Pos],
+		SquereContent: squereContent,
 		Player1Score:  room.Player1.Score,
 	}
 	err = room.Player1.Conn.WriteJSON(player1ToPlayer1Msg)
@@ -108,13 +114,10 @@ func handleMsgFromPlayer1(room *Room, conn *websocket.Conn) error {
 		log.Println("write:", err)
 	}
 
-	// set the squere to empty
-	room.Board[msgFromPlayer1.Pos] = 0
-
 	// send message to player 2
 	player1ToPlayer2Msg := Player1ToPlayer2Msg{
 		RoomState:    room.Status,
-		Board:        room.Board,
+		Pos:          msgFromPlayer1.Pos,
 		Player2Score: room.Player2.Score,
 	}
 	if room.Player2 != nil {
@@ -142,8 +145,11 @@ func handlePlayer2(room *Room, conn *websocket.Conn) error {
 		return err
 	}
 	log.Println("player2: ", msg.Pos, msg.Contains)
-	room.Board[msg.Pos] = msg.Contains
-	log.Println(room.Board)
+	squere := room.Board[msg.Pos]
+	if squere.Content == 0 {
+		squere.Content = msg.Contains
+		go squere.Run(room.Player2, msg.Pos)
+	}
 	return nil
 }
 

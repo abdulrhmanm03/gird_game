@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import styles from "../styles/game.module.css";
 import Mode1Squer from "./Mode1Squer";
 import Mode2Squer from "./Mode2Squer";
@@ -13,17 +12,8 @@ export default function Grid({ socket, mode, contains }: Props) {
   const width = 5;
   const height = 5;
 
-  const initGrid = new Array(width * height).fill(0);
-  const [grid, setGrid] = useState(initGrid);
+  const grid = new Array(width * height).fill(0);
 
-  useEffect(() => {
-    if (mode == 2) {
-      socket.addEventListener("message", (event) => {
-        const { board } = JSON.parse(event.data);
-        setGrid(board);
-      });
-    }
-  }, [mode, socket]);
   return (
     <div className={styles.grid}>
       {grid.map((_, i) => {
@@ -32,13 +22,7 @@ export default function Grid({ socket, mode, contains }: Props) {
         }
         if (mode == 2) {
           return (
-            <Mode2Squer
-              key={i}
-              socket={socket}
-              pos={i}
-              contains={contains}
-              grid={grid}
-            />
+            <Mode2Squer key={i} socket={socket} index={i} contains={contains} />
           );
         }
       })}

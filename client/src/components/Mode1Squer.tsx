@@ -15,6 +15,7 @@ export default function Mode1Squer({ socket, pos }: Props) {
     console.log("mode1 is talking from " + pos);
     socket.addEventListener("message", (event) => {
       const { squere_index, squere_content } = JSON.parse(event.data);
+
       if (squere_index == pos) {
         switch (squere_content) {
           case 1:
