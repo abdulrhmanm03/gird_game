@@ -18,11 +18,11 @@
 }
 
 .squer {
+  position: relative;
   display: flex;
   align-items: center;
-  padding: 20px;
   border: 1px solid white;
-  height: 80px;
+  height: 120px;
 }
 
 .buttonscontainer {
@@ -49,10 +49,20 @@
 }
 
 .svg {
-  z-index: 1000;
+  position: absolute;
+  width: 100%;
   margin: auto;
   max-height: 100%;
   max-width: 100%;
+}
+
+.timer {
+  margin-inline: auto;
+  z-index: 1001;
+  font-size: 30px;
+  font-weight: bolder;
+  color: black;
+  border-radius: 50%;
 }
 
 .waitingcontainer {

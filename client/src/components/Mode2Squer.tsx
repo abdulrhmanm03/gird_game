@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import styles from "../styles/game.module.css";
+import Timer from "./Timer";
 
 interface Props {
   socket: WebSocket;
@@ -37,8 +38,18 @@ export default function Mode2Squer({ socket, index, contains }: Props) {
 
   return (
     <div className={styles.squer} onClick={() => handleClick(index)}>
-      {isBomb && <img className={styles.svg} src="/bomb.svg"></img>}
-      {isApple && <img className={styles.svg} src="/apple.svg"></img>}
+      {isBomb && (
+        <>
+          <img className={styles.svg} src="/bomb.svg" />
+          <Timer interval={15} />
+        </>
+      )}
+      {isApple && (
+        <>
+          <img className={styles.svg} src="/apple.svg" />
+          <Timer interval={15} />
+        </>
+      )}
     </div>
   );
 }

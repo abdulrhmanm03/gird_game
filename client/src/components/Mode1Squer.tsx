@@ -41,7 +41,11 @@ export default function Mode1Squer({ socket, pos }: Props) {
 
   return (
     <div className={`${styles.squer} `} onClick={() => handleClick(pos)}>
-      {isBomb && <img className={styles.svg} src="/bomb.svg"></img>}
+      {isBomb && (
+        <>
+          <img className={styles.svg} src="/bomb.svg" />
+        </>
+      )}
       {isApple && <img className={styles.svg} src="/apple.svg"></img>}
     </div>
   );
