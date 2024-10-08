@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Grid from "../components/Grid";
 import { useLocation, useNavigate } from "react-router-dom";
 import styles from "../styles/game.module.css";
+import GameOver from "../components/GameOver";
 
 export default function GamePage() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function GamePage() {
   const [isRoomActive, setIsRoomActive] = useState(false);
   const [squerContains, setSquerContains] = useState(0);
   const [playerScore, setPlayerScore] = useState(100);
+  const [gameResults, setgameResults] = useState<string | null>(null);
 
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:3000/ws");
@@ -24,9 +26,12 @@ export default function GamePage() {
       socket.send(JSON.stringify({ mode }));
     };
     socket.addEventListener("message", (event) => {
-      const { room_state } = JSON.parse(event.data);
+      const { room_state, result } = JSON.parse(event.data);
       if (room_state === 0) {
         setIsRoomActive(true);
+      }
+      if (room_state === 2) {
+        setgameResults(result);
       }
     });
 
@@ -73,6 +78,7 @@ export default function GamePage() {
           {ws != null && (
             <Grid socket={ws} mode={mode} contains={squerContains} />
           )}
+          {gameResults && <GameOver result={gameResults} />}
         </div>
       ) : (
         <div className={styles.waitingcontainer}>

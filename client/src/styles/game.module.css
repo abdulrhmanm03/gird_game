@@ -70,3 +70,31 @@
   justify-content: center;
   margin-top: 400px;
 }
+
+.gameovercontainer {
+  position: absolute;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 1000px;
+}
+
+.gameoverbox {
+  border: 1px solid white;
+  border-radius: 10px;
+  color: white;
+  background-color: black;
+  width: 40%;
+  margin-inline: auto;
+  min-width: 400px;
+  height: 300px;
+  margin-top: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.gameover {
+  margin-top: 100px;
+}

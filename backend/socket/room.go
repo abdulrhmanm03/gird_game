@@ -3,6 +3,9 @@ package socket
 import (
 	"errors"
 	"gamefr/game"
+	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 type Room struct {
@@ -16,6 +19,7 @@ type Room struct {
 var (
 	roomsForMode1 = make(map[int]*Room)
 	roomsForMode2 = make(map[int]*Room)
+	activeRooms   = make(map[int]*Room)
 )
 
 var (
@@ -45,34 +49,34 @@ func createRoom(player *game.Player, id int) (*Room, error) {
 	return nil, errors.New("not valid player role")
 }
 
-type testConn struct {
-	Test string `json:"test"`
-}
-
 func addPlayerToRoom(player *game.Player, room *Room) (*Room, error) {
 	if room.Status == 0 {
 		return nil, errors.New("Room is full")
 	}
 	if room.Player1 == nil {
 		// test the other player connection if not connected delete the room
-		err := room.Player2.Conn.WriteJSON(testConn{Test: "test"})
+		err := room.Player2.Conn.WriteMessage(websocket.PingMessage, nil)
 		if err != nil {
 			delete(roomsForMode2, room.Id)
 			return nil, err
 		}
 		room.Player1 = player
 		room.Status = 0
+		activeRooms[room.Id] = room
+		go monitorRoomConnection(room)
 		return room, nil
 	}
 	if room.Player2 == nil {
 		// test the other player connection if not connected delete the room
-		err := room.Player1.Conn.WriteJSON(testConn{Test: "test"})
+		err := room.Player1.Conn.WriteMessage(websocket.PingMessage, nil)
 		if err != nil {
 			delete(roomsForMode1, room.Id)
 			return nil, err
 		}
 		room.Player2 = player
 		room.Status = 0
+		activeRooms[room.Id] = room
+		go monitorRoomConnection(room)
 		return room, nil
 	}
 	return nil, errors.New("something wrong happend")
@@ -102,4 +106,35 @@ func findOrCreateRoom(player *game.Player, roomId int) (*Room, error) {
 	}
 
 	return room, nil
+}
+
+type gameOverMsg struct {
+	Room_state int    `json:"room_state"`
+	Result     string `json:"result"`
+}
+
+func monitorRoomConnection(room *Room) {
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		if room.Status == 0 {
+			err1 := room.Player1.Conn.WriteMessage(websocket.PingMessage, nil)
+			err2 := room.Player2.Conn.WriteMessage(websocket.PingMessage, nil)
+
+			msg := gameOverMsg{Room_state: 2, Result: "win"}
+			if err1 != nil {
+				_ = room.Player2.Conn.WriteJSON(msg)
+			}
+
+			if err2 != nil {
+				_ = room.Player1.Conn.WriteJSON(msg)
+			}
+
+			if err1 != nil || err2 != nil {
+				delete(activeRooms, room.Id)
+				return
+			}
+		}
+	}
 }

@@ -4,7 +4,10 @@ import (
 	"errors"
 	"gamefr/game"
 	"log"
+	"math/rand"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -13,6 +16,49 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true // Allow all origins for simplicity
 	},
+}
+
+func WebsocketHandler(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		http.Error(w, "Could not upgrade to websocket", http.StatusBadRequest)
+		return
+	}
+	defer conn.Close()
+
+	player, room, err := handleInitMsg(conn)
+	if err != nil {
+		return
+	}
+
+	err = sendInitMsg(room)
+	if err != nil {
+		return
+	}
+
+	for {
+		if player.Role == 1 {
+			err = handleMsgFromPlayer1(room, conn)
+			if err != nil {
+				return
+			}
+		}
+		if player.Role == 2 {
+			err = handlePlayer2(room, conn)
+			if err != nil {
+				return
+			}
+		}
+	}
+}
+
+func getRoomId(min int, max int) int {
+	var mu sync.Mutex
+	mu.Lock()
+	defer mu.Unlock()
+	src := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(src)
+	return r.Intn(max) + min
 }
 
 type InitMessage struct {
@@ -28,8 +74,9 @@ func handleInitMsg(conn *websocket.Conn) (*game.Player, *Room, error) {
 	}
 
 	player := game.CreatePlayer(initMsg.Mode, conn)
-	// NOTE: the room id is hard coded for now
-	room, err := findOrCreateRoom(&player, 999)
+
+	roomId := getRoomId(1, 1000000)
+	room, err := findOrCreateRoom(&player, roomId)
 	if err != nil {
 		log.Println("failed to creat a room")
 		return nil, nil, err
@@ -151,38 +198,4 @@ func handlePlayer2(room *Room, conn *websocket.Conn) error {
 		go squere.Run(room.Player2, msg.Pos)
 	}
 	return nil
-}
-
-func WebsocketHandler(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		http.Error(w, "Could not upgrade to websocket", http.StatusBadRequest)
-		return
-	}
-	defer conn.Close()
-
-	player, room, err := handleInitMsg(conn)
-	if err != nil {
-		return
-	}
-
-	err = sendInitMsg(room)
-	if err != nil {
-		return
-	}
-
-	for {
-		if player.Role == 1 {
-			err = handleMsgFromPlayer1(room, conn)
-			if err != nil {
-				return
-			}
-		}
-		if player.Role == 2 {
-			err = handlePlayer2(room, conn)
-			if err != nil {
-				return
-			}
-		}
-	}
 }
