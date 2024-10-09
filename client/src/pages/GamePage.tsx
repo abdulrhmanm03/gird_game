@@ -3,6 +3,13 @@ import Grid from "../components/Grid";
 import { useLocation, useNavigate } from "react-router-dom";
 import styles from "../styles/game.module.css";
 import GameOver from "../components/GameOver";
+import RoomTimer from "../components/RoomTimer";
+
+enum roomState {
+  gameOver = 0,
+  waiting = 1,
+  active = 2,
+}
 
 export default function GamePage() {
   const navigate = useNavigate();
@@ -12,7 +19,12 @@ export default function GamePage() {
   const [isRoomActive, setIsRoomActive] = useState(false);
   const [squerContains, setSquerContains] = useState(0);
   const [playerScore, setPlayerScore] = useState(100);
-  const [gameResults, setgameResults] = useState<string | null>(null);
+  const [gameResults, setgameResults] = useState("");
+  const [resultNote, setResultNote] = useState("");
+
+  const roomTimeInMinutes = 5;
+  const roomTime = new Date();
+  roomTime.setSeconds(roomTime.getSeconds() + roomTimeInMinutes * 60);
 
   useEffect(() => {
     const socket = new WebSocket("ws://localhost:3000/ws");
@@ -26,12 +38,13 @@ export default function GamePage() {
       socket.send(JSON.stringify({ mode }));
     };
     socket.addEventListener("message", (event) => {
-      const { room_state, result } = JSON.parse(event.data);
-      if (room_state === 0) {
+      const { room_state, result, note } = JSON.parse(event.data);
+      if (room_state === roomState.active) {
         setIsRoomActive(true);
       }
-      if (room_state === 2) {
+      if (room_state === roomState.gameOver) {
         setgameResults(result);
+        setResultNote(note);
       }
     });
 
@@ -44,7 +57,9 @@ export default function GamePage() {
     if (ws != null && isRoomActive) {
       ws.addEventListener("message", (event) => {
         const { score } = JSON.parse(event.data);
-        setPlayerScore(score);
+        if (score) {
+          setPlayerScore(score);
+        }
       });
     }
   }, [ws, isRoomActive]);
@@ -57,7 +72,10 @@ export default function GamePage() {
     <>
       {isRoomActive ? (
         <div className={styles.gamepage}>
-          <h1>Score: {playerScore}</h1>
+          <div className={styles.scoreandtimer}>
+            <h1>Score: {playerScore}</h1>
+            <RoomTimer expiryTimestamp={roomTime} />
+          </div>
           {mode === 2 && (
             <div className={styles.buttonscontainer}>
               <button
@@ -78,7 +96,7 @@ export default function GamePage() {
           {ws != null && (
             <Grid socket={ws} mode={mode} contains={squerContains} />
           )}
-          {gameResults && <GameOver result={gameResults} />}
+          {gameResults && <GameOver result={gameResults} note={resultNote} />}
         </div>
       ) : (
         <div className={styles.waitingcontainer}>
