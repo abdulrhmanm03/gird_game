@@ -24,7 +24,7 @@ const (
 	active
 )
 
-const roomTimeInMinutes = 5
+const roomTimeInMinutes = 3
 
 var (
 	roomsForMode1 = make(map[int]*Room)

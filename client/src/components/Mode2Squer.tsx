@@ -6,9 +6,17 @@ interface Props {
   socket: WebSocket;
   index: number;
   contains: number;
+  playerScore: number;
+  setPlayerScore: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export default function Mode2Squer({ socket, index, contains }: Props) {
+export default function Mode2Squer({
+  socket,
+  index,
+  contains,
+  playerScore,
+  setPlayerScore,
+}: Props) {
   const [isBomb, setIsBomb] = useState(false);
   const [isApple, setIsApple] = useState(false);
 
@@ -27,10 +35,12 @@ export default function Mode2Squer({ socket, index, contains }: Props) {
       case 1:
         setIsApple(false);
         setIsBomb(true);
+        setPlayerScore(playerScore - 5);
         break;
       case 2:
         setIsBomb(false);
         setIsApple(true);
+        setPlayerScore(playerScore - 5);
         break;
     }
     socket.send(JSON.stringify({ pos, contains }));

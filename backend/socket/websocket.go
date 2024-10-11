@@ -195,6 +195,7 @@ func handleMsgFromPlayer1(room *Room, conn *websocket.Conn) error {
 
 	} else {
 		log.Println("player1: ", msgFromPlayer1.ButtonClicked) // logging
+		room.Player1.Score -= 5
 
 		if msgFromPlayer1.ButtonClicked == 1 {
 			bombCount := 0
@@ -257,6 +258,7 @@ func handlePlayer2(room *Room, conn *websocket.Conn) error {
 	if squere.Content == 0 {
 		squere.Content = msg.Contains
 		go squere.Run(room.Player2, msg.Pos)
+		room.Player2.Score -= 5
 	}
 	return nil
 }

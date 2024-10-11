@@ -24,7 +24,7 @@ export default function GamePage() {
   const [bombCount, setBombCount] = useState<number | null>(null);
   const [appleCount, setAppleCount] = useState<number | null>(null);
 
-  const roomTimeInMinutes = 5;
+  const roomTimeInMinutes = 3;
   const roomTime = new Date();
   roomTime.setSeconds(roomTime.getSeconds() + roomTimeInMinutes * 60);
 
@@ -85,6 +85,7 @@ export default function GamePage() {
 
   function handelMode1ButtonClick(buttonClicked: number) {
     socket?.send(JSON.stringify({ pos: -1, button_clicked: buttonClicked }));
+    setPlayerScore(playerScore - 5);
   }
 
   return (
@@ -101,13 +102,13 @@ export default function GamePage() {
                 className={styles.button}
                 onClick={() => changeSquereContains(1)}
               >
-                bomb
+                bomb (-5)
               </button>
               <button
                 className={styles.button}
                 onClick={() => changeSquereContains(2)}
               >
-                apple
+                apple (-5)
               </button>
             </div>
           )}
@@ -119,13 +120,13 @@ export default function GamePage() {
                   className={styles.button}
                   onClick={() => handelMode1ButtonClick(1)}
                 >
-                  apples and bomb count
+                  apples and bomb count (-5)
                 </button>
                 <button
                   className={styles.button}
                   onClick={() => handelMode1ButtonClick(2)}
                 >
-                  active cell
+                  active cell (-5)
                 </button>
               </div>
               {bombCount !== null && (
@@ -150,7 +151,13 @@ export default function GamePage() {
           )}
 
           {socket != null && (
-            <Grid socket={socket} mode={mode} contains={squerContains} />
+            <Grid
+              socket={socket}
+              mode={mode}
+              contains={squerContains}
+              playerScore={playerScore}
+              setPlayerScore={setPlayerScore}
+            />
           )}
           {gameResults && <GameOver result={gameResults} note={resultNote} />}
         </div>
