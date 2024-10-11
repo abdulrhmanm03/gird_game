@@ -109,7 +109,19 @@ func sendInitMsg(room *Room) error {
 }
 
 type MsgFromPlayer1 struct {
-	Pos int `json:"pos"`
+	Pos int `json:"pos"` // NOTE: the position of the cell the player clicked on if == -1 thin the player clicked a button not a cell
+	// NOTE: if == 1 the player wants to know how many bombs and apples on the map
+	// if == 2 the player wnats to know which cell in the map are full
+	ButtonClicked int `json:"button_clicked"` // TODO: come with a better name for this
+}
+
+type MsgOnButton1Clicked struct {
+	BombCount  int `json:"bomb_count"`
+	AppleCount int `json:"apple_count"`
+}
+
+type MsgOnButton2Clicked struct {
+	ActiveCells []int `json:"active_cells"`
 }
 
 type Player1ToPlayer1Msg struct {
@@ -135,47 +147,96 @@ func handleMsgFromPlayer1(room *Room, conn *websocket.Conn) error {
 		log.Println("read:", err)
 		return err
 	}
-	log.Println("player1: ", msgFromPlayer1.Pos) // logging
 
-	// game logic
-	squere := room.Board[msgFromPlayer1.Pos]
-	squereContent := squere.Content
+	// if player clicked on a cell
+	if msgFromPlayer1.Pos > -1 {
 
-	if squereContent == 1 {
-		room.Player1.Score -= 5
-		squere.Clicked <- true
-	} else if squereContent == 2 {
-		room.Player1.Score += 5
-		squere.Clicked <- true
-	}
+		log.Println("player1: ", msgFromPlayer1.Pos) // logging
 
-	// send message to player 1
-	player1ToPlayer1Msg := Player1ToPlayer1Msg{
-		RoomState:     room.Status,
-		SquereIdx:     msgFromPlayer1.Pos,
-		SquereContent: squereContent,
-		Player1Score:  room.Player1.Score,
-	}
-	err = room.Player1.Conn.WriteJSON(player1ToPlayer1Msg)
-	if err != nil {
-		log.Println("write:", err)
-	}
+		// game logic
+		squere := room.Board[msgFromPlayer1.Pos]
+		squereContent := squere.Content
 
-	// send message to player 2
-	player1ToPlayer2Msg := Player1ToPlayer2Msg{
-		RoomState:    room.Status,
-		Pos:          msgFromPlayer1.Pos,
-		Player2Score: room.Player2.Score,
-	}
-	if room.Player2 != nil {
-		err = room.Player2.Conn.WriteJSON(player1ToPlayer2Msg)
+		if squereContent == 1 {
+			room.Player1.Score -= 5
+			squere.Clicked <- true
+		} else if squereContent == 2 {
+			room.Player1.Score += 5
+			squere.Clicked <- true
+		}
+
+		// send message to player 1
+		player1ToPlayer1Msg := Player1ToPlayer1Msg{
+			RoomState:     room.Status,
+			SquereIdx:     msgFromPlayer1.Pos,
+			SquereContent: squereContent,
+			Player1Score:  room.Player1.Score,
+		}
+		err = room.Player1.Conn.WriteJSON(player1ToPlayer1Msg)
 		if err != nil {
 			log.Println("write:", err)
 		}
+
+		// send message to player 2
+		player1ToPlayer2Msg := Player1ToPlayer2Msg{
+			RoomState:    room.Status,
+			Pos:          msgFromPlayer1.Pos,
+			Player2Score: room.Player2.Score,
+		}
+		if room.Player2 != nil {
+			err = room.Player2.Conn.WriteJSON(player1ToPlayer2Msg)
+			if err != nil {
+				log.Println("write:", err)
+			}
+		} else {
+			log.Println("no player 2")
+			return errors.New("player 2 left the room")
+		}
+
 	} else {
-		log.Println("no player 2")
-		return errors.New("player 2 left the room")
+		log.Println("player1: ", msgFromPlayer1.ButtonClicked) // logging
+
+		if msgFromPlayer1.ButtonClicked == 1 {
+			bombCount := 0
+			appleCount := 0
+			for _, v := range room.Board {
+				if v.Content == 1 {
+					bombCount++
+				} else if v.Content == 2 {
+					appleCount++
+				}
+			}
+
+			msg := MsgOnButton1Clicked{
+				BombCount:  bombCount,
+				AppleCount: appleCount,
+			}
+
+			err = room.Player1.Conn.WriteJSON(msg)
+			if err != nil {
+				log.Println("write: faild to send msg to player 1")
+				return err
+			}
+		} else if msgFromPlayer1.ButtonClicked == 2 {
+			activeCells := make([]int, 0, 25)
+			for i, v := range room.Board {
+				if v.Content == 1 || v.Content == 2 {
+					activeCells = append(activeCells, i)
+				}
+			}
+
+			msg := MsgOnButton2Clicked{
+				ActiveCells: activeCells,
+			}
+
+			err = room.Player1.Conn.WriteJSON(msg)
+			if err != nil {
+				log.Println("write: faild to send msg to player 1")
+				return err
+			}
+		}
 	}
+
 	return nil
 }
 

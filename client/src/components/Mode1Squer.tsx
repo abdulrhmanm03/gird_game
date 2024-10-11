@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "../styles/game.module.css";
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
 export default function Mode1Squer({ socket, pos }: Props) {
   const [isBomb, setIsBomb] = useState(false);
   const [isApple, setIsApple] = useState(false);
+  const [isCellActive, setIsCellActive] = useState(false);
 
   function handleClick(pos: number) {
     socket.send(JSON.stringify({ pos }));
@@ -39,8 +40,23 @@ export default function Mode1Squer({ socket, pos }: Props) {
     });
   }
 
+  useEffect(() => {
+    socket.addEventListener("message", (event) => {
+      const { active_cells } = JSON.parse(event.data);
+      if (active_cells) {
+        if (active_cells.includes(pos)) {
+          setIsCellActive(true);
+          setTimeout(() => setIsCellActive(false), 500);
+        }
+      }
+    });
+  }, [socket, pos]);
+
   return (
-    <div className={`${styles.squer} `} onClick={() => handleClick(pos)}>
+    <div
+      className={`${styles.squer} ${isCellActive ? styles.activesquere : ""}`}
+      onClick={() => handleClick(pos)}
+    >
       {isBomb && (
         <>
           <img className={styles.svg} src="/bomb.svg" />

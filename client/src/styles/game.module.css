@@ -12,7 +12,7 @@
   grid-template-rows: repeat(5, 1fr);
   width: 60%;
   margin: auto;
-  margin-top: 100px;
+  margin-top: 60px;
   border: 3px solid white;
   border-radius: 10px;
 }
@@ -23,6 +23,10 @@
   align-items: center;
   border: 1px solid white;
   height: 120px;
+}
+
+.activesquere {
+  background-color: darkred;
 }
 
 .scoreandtimer {
@@ -37,23 +41,39 @@
   display: flex;
   justify-content: center;
   gap: 3%;
-  margin-top: 50px;
+  margin-top: 20px;
 }
 
-.mode2buttons {
+.button {
   color: white;
   background-color: black;
   border: 1px solid white;
   border-radius: 10px;
   padding: 10px 20px;
   width: 20%;
-  max-width: 120px;
+  max-width: 150px;
 }
 
-.mode2buttons:hover {
+.button:hover {
   color: darkred;
   border: 1px solid darkred;
   cursor: pointer;
+}
+
+.appleandbomb {
+  display: flex;
+  margin-inline: auto;
+  align-content: center;
+}
+
+.appleandbombcount {
+  margin-inline: 10px;
+  display: flex;
+  font-size: 20px;
+}
+
+.appleandbombcountimg {
+  width: 40px;
 }
 
 .svg {

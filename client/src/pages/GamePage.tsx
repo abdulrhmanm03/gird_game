@@ -15,30 +15,34 @@ export default function GamePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const mode = location.state;
-  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isRoomActive, setIsRoomActive] = useState(false);
   const [squerContains, setSquerContains] = useState(0);
   const [playerScore, setPlayerScore] = useState(100);
   const [gameResults, setgameResults] = useState("");
   const [resultNote, setResultNote] = useState("");
+  const [bombCount, setBombCount] = useState<number | null>(null);
+  const [appleCount, setAppleCount] = useState<number | null>(null);
 
   const roomTimeInMinutes = 5;
   const roomTime = new Date();
   roomTime.setSeconds(roomTime.getSeconds() + roomTimeInMinutes * 60);
 
   useEffect(() => {
-    const socket = new WebSocket("ws://localhost:3000/ws");
-    if (socket === null) {
+    const ws = new WebSocket("ws://localhost:3000/ws");
+    if (ws === null) {
       alert("faild to connect to the socket");
       navigate("/");
     }
-    setWs(socket);
+    setSocket(ws);
 
-    socket.onopen = () => {
-      socket.send(JSON.stringify({ mode }));
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ mode }));
     };
-    socket.addEventListener("message", (event) => {
-      const { room_state, result, note } = JSON.parse(event.data);
+    ws.addEventListener("message", (event) => {
+      const { room_state, result, note, bomb_count, apple_count } = JSON.parse(
+        event.data,
+      );
       if (room_state === roomState.active) {
         setIsRoomActive(true);
       }
@@ -46,26 +50,41 @@ export default function GamePage() {
         setgameResults(result);
         setResultNote(note);
       }
+      if (apple_count !== undefined || bomb_count !== undefined) {
+        console.log("clicked");
+        console.log(bomb_count);
+
+        setBombCount(bomb_count);
+        setAppleCount(apple_count);
+        setTimeout(() => {
+          setBombCount(null);
+          setAppleCount(null);
+        }, 1000);
+      }
     });
 
     return () => {
-      socket.close();
+      ws.close();
     };
   }, [mode, navigate]);
 
   useEffect(() => {
-    if (ws != null && isRoomActive) {
-      ws.addEventListener("message", (event) => {
+    if (socket != null && isRoomActive) {
+      socket.addEventListener("message", (event) => {
         const { score } = JSON.parse(event.data);
         if (score) {
           setPlayerScore(score);
         }
       });
     }
-  }, [ws, isRoomActive]);
+  }, [socket, isRoomActive]);
 
   function changeSquereContains(contains: number) {
     setSquerContains(contains);
+  }
+
+  function handelMode1ButtonClick(buttonClicked: number) {
+    socket?.send(JSON.stringify({ pos: -1, button_clicked: buttonClicked }));
   }
 
   return (
@@ -79,13 +98,13 @@ export default function GamePage() {
           {mode === 2 && (
             <div className={styles.buttonscontainer}>
               <button
-                className={styles.mode2buttons}
+                className={styles.button}
                 onClick={() => changeSquereContains(1)}
               >
                 bomb
               </button>
               <button
-                className={styles.mode2buttons}
+                className={styles.button}
                 onClick={() => changeSquereContains(2)}
               >
                 apple
@@ -93,8 +112,45 @@ export default function GamePage() {
             </div>
           )}
 
-          {ws != null && (
-            <Grid socket={ws} mode={mode} contains={squerContains} />
+          {mode === 1 && (
+            <>
+              <div className={styles.buttonscontainer}>
+                <button
+                  className={styles.button}
+                  onClick={() => handelMode1ButtonClick(1)}
+                >
+                  apples and bomb count
+                </button>
+                <button
+                  className={styles.button}
+                  onClick={() => handelMode1ButtonClick(2)}
+                >
+                  active cell
+                </button>
+              </div>
+              {bombCount !== null && (
+                <div className={styles.appleandbomb}>
+                  <span className={styles.appleandbombcount}>
+                    <p>{bombCount}</p>
+                    <img
+                      src="/bomb.svg"
+                      className={styles.appleandbombcountimg}
+                    />
+                  </span>
+                  <span className={styles.appleandbombcount}>
+                    <p>{appleCount}</p>
+                    <img
+                      src="/apple.svg"
+                      className={styles.appleandbombcountimg}
+                    />
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+
+          {socket != null && (
+            <Grid socket={socket} mode={mode} contains={squerContains} />
           )}
           {gameResults && <GameOver result={gameResults} note={resultNote} />}
         </div>
