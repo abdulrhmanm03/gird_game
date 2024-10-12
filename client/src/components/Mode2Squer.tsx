@@ -31,19 +31,21 @@ export default function Mode2Squer({
   }, [socket, index]);
 
   function handleClick(pos: number) {
-    switch (contains) {
-      case 1:
-        setIsApple(false);
-        setIsBomb(true);
-        setPlayerScore(playerScore - 5);
-        break;
-      case 2:
-        setIsBomb(false);
-        setIsApple(true);
-        setPlayerScore(playerScore - 5);
-        break;
+    if (!isApple && !isBomb) {
+      switch (contains) {
+        case 1:
+          setIsApple(false);
+          setIsBomb(true);
+          setPlayerScore(playerScore - 5);
+          break;
+        case 2:
+          setIsBomb(false);
+          setIsApple(true);
+          setPlayerScore(playerScore - 5);
+          break;
+      }
+      socket.send(JSON.stringify({ pos, contains }));
     }
-    socket.send(JSON.stringify({ pos, contains }));
   }
 
   return (
