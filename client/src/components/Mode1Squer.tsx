@@ -3,22 +3,23 @@ import styles from "../styles/game.module.css";
 
 interface Props {
   socket: WebSocket;
-  pos: number;
+  index: number;
 }
 
-export default function Mode1Squer({ socket, pos }: Props) {
+export default function Mode1Squer({ socket, index }: Props) {
   const [isBomb, setIsBomb] = useState(false);
   const [isApple, setIsApple] = useState(false);
   const [isCellActive, setIsCellActive] = useState(false);
 
   function handleClick(pos: number) {
-    socket.send(JSON.stringify({ pos }));
-    console.log("mode1 is talking from " + pos);
+    socket.send(JSON.stringify({ pos, button_clicked: 0 }));
+    console.log("mode 1 is talking from " + pos);
     socket.addEventListener("message", (event) => {
-      const { squere_index, squere_content } = JSON.parse(event.data);
+      const { data } = JSON.parse(event.data);
+      const { pos, content } = data;
 
-      if (squere_index == pos) {
-        switch (squere_content) {
+      if (index == pos) {
+        switch (content) {
           case 1:
             setIsBomb(true);
             setTimeout(() => {
@@ -42,20 +43,21 @@ export default function Mode1Squer({ socket, pos }: Props) {
 
   useEffect(() => {
     socket.addEventListener("message", (event) => {
-      const { active_cells } = JSON.parse(event.data);
+      const { data } = JSON.parse(event.data);
+      const { active_cells } = data;
       if (active_cells) {
-        if (active_cells.includes(pos)) {
+        if (active_cells.includes(index)) {
           setIsCellActive(true);
           setTimeout(() => setIsCellActive(false), 500);
         }
       }
     });
-  }, [socket, pos]);
+  }, [socket, index]);
 
   return (
     <div
       className={`${styles.squer} ${isCellActive ? styles.activesquere : ""}`}
-      onClick={() => handleClick(pos)}
+      onClick={() => handleClick(index)}
     >
       {isBomb && (
         <>

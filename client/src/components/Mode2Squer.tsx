@@ -2,6 +2,12 @@ import { useEffect, useState } from "react";
 import styles from "../styles/game.module.css";
 import Timer from "./Timer";
 
+enum cellContent {
+  empty = 0,
+  bomb = 1,
+  apple = 2,
+}
+
 interface Props {
   socket: WebSocket;
   index: number;
@@ -22,23 +28,36 @@ export default function Mode2Squer({
 
   useEffect(() => {
     socket.addEventListener("message", (event) => {
-      const { pos } = JSON.parse(event.data);
+      const { data } = JSON.parse(event.data);
+      const { pos, content } = data;
       if (pos === index) {
-        setIsBomb(false);
-        setIsApple(false);
+        switch (content) {
+          case cellContent.empty:
+            setIsBomb(false);
+            setIsApple(false);
+            break;
+          case cellContent.bomb:
+            setIsApple(false);
+            setIsBomb(true);
+            break;
+          case cellContent.apple:
+            setIsBomb(false);
+            setIsApple(true);
+            break;
+        }
       }
     });
-  }, [socket, index]);
+  }, [socket, index, playerScore, setPlayerScore]);
 
   function handleClick(pos: number) {
     if (!isApple && !isBomb) {
       switch (contains) {
-        case 1:
+        case cellContent.bomb:
           setIsApple(false);
           setIsBomb(true);
           setPlayerScore(playerScore - 5);
           break;
-        case 2:
+        case cellContent.apple:
           setIsBomb(false);
           setIsApple(true);
           setPlayerScore(playerScore - 5);

@@ -1,53 +1,48 @@
 package game
 
 import (
-	"log"
 	"time"
 )
 
-type Squere struct {
-	Content int
-	Clicked chan bool
+const (
+	Empty = iota
+	Bomb
+	Apple
+)
+
+type Cell struct {
+	Content  int
+	Clicked  chan bool
+	TimeOver chan bool
 }
 
-func newSquere() *Squere {
-	return &Squere{
-		Content: 0,
-		Clicked: make(chan bool),
+func newCell() *Cell {
+	return &Cell{
+		Content:  Empty,
+		Clicked:  make(chan bool),
+		TimeOver: make(chan bool),
 	}
 }
 
-type Msg struct {
-	Pos   int `json:"pos"`
-	Score int `json:"score"`
-}
-
-func (s *Squere) Run(player *Player, index int) {
+func (s *Cell) Run(player *Player, pos int) {
 	select {
 	case <-s.Clicked:
-		break
+		s.TimeOver <- false
 	case <-time.After(15 * time.Second):
-		if s.Content == 1 {
+		if s.Content == Bomb {
 			player.Score -= 5
-		} else if s.Content == 2 {
-			player.Score += 5
+		} else if s.Content == Apple {
+			player.Score += 10
 		}
-		msg := Msg{
-			Pos:   index,
-			Score: player.Score,
-		}
-		err := player.Conn.WriteJSON(msg)
-		if err != nil {
-			log.Println("write faild to write to player")
-		}
+		s.Content = Empty
+		s.TimeOver <- true
 	}
-	s.Content = 0
 }
 
-func CreateBoard(width int, height int) []*Squere {
-	board := make([]*Squere, width*height)
+func CreateBoard(width int, height int) []*Cell {
+	board := make([]*Cell, width*height)
 	for i := range board {
-		board[i] = newSquere()
+		board[i] = newCell()
 	}
 	return board
 }

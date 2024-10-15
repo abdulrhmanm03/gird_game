@@ -27,7 +27,7 @@ export default function Grid({
     <div className={styles.grid}>
       {grid.map((_, i) => {
         if (mode == 1) {
-          return <Mode1Squer key={i} socket={socket} pos={i} />;
+          return <Mode1Squer key={i} socket={socket} index={i} />;
         }
         if (mode == 2) {
           return (

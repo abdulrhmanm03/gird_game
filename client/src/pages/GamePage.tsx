@@ -40,26 +40,38 @@ export default function GamePage() {
       ws.send(JSON.stringify({ mode }));
     };
     ws.addEventListener("message", (event) => {
-      const { room_state, result, note, bomb_count, apple_count } = JSON.parse(
-        event.data,
-      );
-      if (room_state === roomState.active) {
-        setIsRoomActive(true);
-      }
-      if (room_state === roomState.gameOver) {
-        setgameResults(result);
-        setResultNote(note);
-      }
-      if (apple_count !== undefined || bomb_count !== undefined) {
-        console.log("clicked");
-        console.log(bomb_count);
+      const { room_state, score, data } = JSON.parse(event.data);
 
-        setBombCount(bomb_count);
-        setAppleCount(apple_count);
-        setTimeout(() => {
-          setBombCount(null);
-          setAppleCount(null);
-        }, 1000);
+      if (data) {
+        const { bomb_count, apple_count } = data;
+        setPlayerScore(score);
+
+        if (apple_count !== undefined || bomb_count !== undefined) {
+          console.log(bomb_count);
+
+          setBombCount(bomb_count);
+          setAppleCount(apple_count);
+
+          setTimeout(() => {
+            setBombCount(null);
+            setAppleCount(null);
+          }, 1000);
+        }
+      }
+
+      console.log(room_state);
+
+      switch (room_state) {
+        case roomState.active:
+          setIsRoomActive(true);
+          break;
+        case roomState.gameOver:
+          if (data) {
+            const { result, note } = data;
+            setgameResults(result);
+            setResultNote(note);
+          }
+          break;
       }
     });
 
@@ -67,17 +79,6 @@ export default function GamePage() {
       ws.close();
     };
   }, [mode, navigate]);
-
-  useEffect(() => {
-    if (socket != null && isRoomActive) {
-      socket.addEventListener("message", (event) => {
-        const { score } = JSON.parse(event.data);
-        if (score) {
-          setPlayerScore(score);
-        }
-      });
-    }
-  }, [socket, isRoomActive]);
 
   function changeSquereContains(contains: number) {
     setSquerContains(contains);

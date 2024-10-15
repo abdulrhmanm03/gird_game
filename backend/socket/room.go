@@ -4,6 +4,7 @@ import (
 	"errors"
 	"gamefr/game"
 	"log"
+	"math/rand"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -14,7 +15,7 @@ type Room struct {
 	Player1 *game.Player
 	Player2 *game.Player
 	Status  int
-	Board   []*game.Squere
+	Board   []*game.Cell
 }
 
 // enum for room state
@@ -43,14 +44,13 @@ func createRoom(player *game.Player, id int) (*Room, error) {
 		Status: waiting,
 		Board:  game.CreateBoard(width, height),
 	}
-	if player.Role == 1 {
+	switch player.Role {
+	case 1:
 		room.Player1 = player
-		room.Player2 = nil
 		roomsForMode2[room.Id] = room
 
 		return room, nil
-	} else if player.Role == 2 {
-		room.Player1 = nil
+	case 2:
 		room.Player2 = player
 		roomsForMode1[room.Id] = room
 
@@ -71,10 +71,7 @@ func addPlayerToRoom(player *game.Player, room *Room) (*Room, error) {
 			return nil, err
 		}
 		room.Player1 = player
-		room.Status = active
-		activeRooms[room.Id] = room
-		go monitorRoomConnection(room)
-		go startRoomTimer(roomTimeInMinutes, room)
+		initiateRoom(room)
 		return room, nil
 	}
 	if room.Player2 == nil {
@@ -85,24 +82,21 @@ func addPlayerToRoom(player *game.Player, room *Room) (*Room, error) {
 			return nil, err
 		}
 		room.Player2 = player
-		room.Status = active
-		activeRooms[room.Id] = room
-		go monitorRoomConnection(room)
-		go startRoomTimer(roomTimeInMinutes, room)
+		initiateRoom(room)
 		return room, nil
 	}
-	return nil, errors.New("something wrong happend")
+	return nil, errors.New("something wrong happend with adding player to the room")
 }
 
 func findOrCreateRoom(player *game.Player, roomId int) (*Room, error) {
-	var rooms map[int]*Room
+	var availableRooms map[int]*Room
 	if player.Role == 1 {
-		rooms = roomsForMode1
+		availableRooms = roomsForMode1
 	} else {
-		rooms = roomsForMode2
+		availableRooms = roomsForMode2
 	}
 
-	for _, room := range rooms {
+	for _, room := range availableRooms {
 		if room.Status == waiting {
 			room, err := addPlayerToRoom(player, room)
 			if err != nil {
@@ -120,83 +114,127 @@ func findOrCreateRoom(player *game.Player, roomId int) (*Room, error) {
 	return room, nil
 }
 
-type gameOverMsg struct {
-	Room_state int    `json:"room_state"`
-	Result     string `json:"result"`
-	Note       string `json:"note"`
-}
-
-func createGameOverMsg(result string, note string) gameOverMsg {
-	return gameOverMsg{
-		Room_state: gameOver,
-		Result:     result,
-		Note:       note,
-	}
-}
-
 func monitorRoomConnection(room *Room) {
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {
 		if room.Status == active {
+			mu.Lock()
 			err1 := room.Player1.Conn.WriteMessage(websocket.PingMessage, nil)
 			err2 := room.Player2.Conn.WriteMessage(websocket.PingMessage, nil)
 
 			note := "The other player disconnected"
 			result := "win"
-			msg := createGameOverMsg(result, note)
 			if err1 != nil {
+				room.Status = gameOver
+				msg := createGameOverMsg(room, room.Player2, result, note)
+				log.Println(note)
 				_ = room.Player2.Conn.WriteJSON(msg)
 			}
 
 			if err2 != nil {
+				room.Status = gameOver
+				msg := createGameOverMsg(room, room.Player1, result, note)
+				log.Println(note)
 				_ = room.Player1.Conn.WriteJSON(msg)
 			}
 
 			if err1 != nil || err2 != nil {
 				delete(activeRooms, room.Id)
+				mu.Unlock()
 				return
 			}
+			mu.Unlock()
 		}
 	}
 }
 
-func writeResultsToPlayers(winner *game.Player, loser *game.Player, draw bool) {
+func writeResultsToPlayers(room *Room, winner *game.Player, loser *game.Player, draw bool) {
+	mu.Lock()
 	note := "Game over"
 
+	defer winner.Conn.Close()
+	defer loser.Conn.Close()
+	defer mu.Unlock()
+
 	if draw {
-		tieMsg := createGameOverMsg("draw", note)
+		tieMsg := createGameOverMsg(room, winner, "draw", note)
 		_ = winner.Conn.WriteJSON(tieMsg)
 		_ = loser.Conn.WriteJSON(tieMsg)
 		return
 	}
 
-	winnerMsg := createGameOverMsg("win", note)
-	loserMsg := createGameOverMsg("lose", note)
+	winnerMsg := createGameOverMsg(room, winner, "win", note)
+	loserMsg := createGameOverMsg(room, loser, "lose", note)
 
 	_ = winner.Conn.WriteJSON(winnerMsg)
 	_ = loser.Conn.WriteJSON(loserMsg)
 }
 
 func startRoomTimer(minutes int, room *Room) {
+	log.Println(room.Id, " room started")
 	player1 := room.Player1
 	player2 := room.Player2
 
 	defer player1.Conn.Close()
 	defer player2.Conn.Close()
+	defer log.Println(room.Id, " room finished")
 
-	log.Println(room.Id, " started")
 	<-time.After(time.Duration(minutes) * time.Minute)
-	log.Println(room.Id, " ended")
 
 	room.Status = gameOver
 
 	if player1.Score > player2.Score {
-		writeResultsToPlayers(room.Player1, room.Player2, false)
+		writeResultsToPlayers(room, room.Player1, room.Player2, false)
 	} else if player2.Score > player1.Score {
-		writeResultsToPlayers(player2, player1, false)
+		writeResultsToPlayers(room, player2, player1, false)
 	} else {
-		writeResultsToPlayers(player1, player2, true)
+		writeResultsToPlayers(room, player1, player2, true)
 	}
+}
+
+func plantRandomCells(room *Room) {
+	ticker := time.NewTicker(10 * time.Second)
+	src := rand.NewSource(time.Now().UnixNano())
+	r := rand.New(src)
+
+	for range ticker.C {
+		cellPos := r.Intn(len(room.Board))
+		appleOrBomb := r.Intn(2) + 1
+
+		cell := room.Board[cellPos]
+
+		if cell.Content == 0 {
+
+			cell.Content = appleOrBomb
+			go cell.Run(room.Player2, cellPos)
+			go sendWhenSquereTimeEnd(room, cell, cellPos)
+
+			mu.Lock()
+			data := sendPlayer2{
+				Pos:     cellPos,
+				Content: cell.Content,
+			}
+
+			res := CreateResponse(room, room.Player2, data)
+			if room.Player2 != nil {
+				err := room.Player2.Conn.WriteJSON(res)
+				if err != nil {
+					log.Println("write:", err)
+					mu.Unlock()
+					return
+				}
+			}
+			mu.Unlock()
+		}
+	}
+}
+
+func initiateRoom(room *Room) {
+	room.Status = active
+	activeRooms[room.Id] = room
+	go monitorRoomConnection(room)
+	go startRoomTimer(roomTimeInMinutes, room)
+	go plantRandomCells(room)
 }
