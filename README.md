@@ -44,7 +44,6 @@ Players can choose between two modes of play:
 ## Demo
 
 [![Demo](https://img.youtube.com/vi/fyLtcAapIkc/0.jpg)](https://www.youtube.com/watch?v=fyLtcAapIkc)
-https://www.youtube.com/watch?v=fyLtcAapIkc
 
 ## Run Locally
 
